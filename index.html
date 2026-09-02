@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENIGMA-9 — Field Cipher Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181f;
+    --ink-2:#1c222b;
+    --paper:#e8e1d0;
+    --paper-2:#dcd3bd;
+    --brass:#b8925a;
+    --brass-bright:#d4ab77;
+    --rust:#a84432;
+    --pine:#3f5d54;
+    --ink-soft:#4a4437;
+    --line: rgba(184,146,90,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 50% -10%, #232b38 0%, var(--ink) 55%);
+    color:var(--paper);
+    font-family:'Source Serif 4', serif;
+    min-height:100vh;
+  }
+
+  ::selection{ background:var(--brass); color:var(--ink); }
+
+  a{color:inherit;}
+
+  .noise{
+    position:fixed; inset:0; pointer-events:none; opacity:0.05; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  header{
+    position:relative; z-index:2;
+    max-width:960px; margin:0 auto;
+    padding:56px 24px 8px;
+    text-align:center;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.32em;
+    font-size:11px;
+    color:var(--brass-bright);
+    text-transform:uppercase;
+    margin:0 0 14px;
+  }
+
+  h1{
+    font-family:'Special Elite', 'Courier New', monospace;
+    font-size:clamp(34px, 6vw, 58px);
+    line-height:1.05;
+    margin:0 0 14px;
+    letter-spacing:0.01em;
+    color:var(--paper);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  }
+
+  .lede{
+    max-width:520px; margin:0 auto;
+    color:#b9b2a0;
+    font-size:17px; line-height:1.6;
+  }
+
+  /* ---------- CIPHER WHEEL ---------- */
+  .wheel-stage{
+    position:relative; z-index:2;
+    display:flex; justify-content:center;
+    margin:36px auto 8px;
+  }
+
+  #wheel{ width:min(420px, 82vw); height:auto; overflow:visible; }
+
+  .ring-outer text, .ring-inner text{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    fill:var(--paper-2);
+    text-anchor:middle;
+    dominant-baseline:middle;
+  }
+  .ring-inner text{ fill:var(--ink); font-weight:600; }
+
+  .ring-outer circle{ fill:none; stroke:var(--line); stroke-width:1; }
+  .ring-inner-disc{ fill:var(--brass); }
+  .ring-inner-disc-shadow{ fill:rgba(0,0,0,0.35); }
+
+  .hub{ fill:var(--ink-2); stroke:var(--brass); stroke-width:2; }
+  .hub-shift{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:22px;
+    fill:var(--brass-bright);
+    text-anchor:middle;
+    dominant-baseline:middle;
+  }
+  .hub-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    letter-spacing:0.18em;
+    fill:#7c7562;
+    text-anchor:middle;
+  }
+
+  #inner-group{ transition: transform 0.35s cubic-bezier(.2,.9,.25,1); transform-origin:210px 210px; }
+
+  .pointer{ fill:var(--rust); }
+
+  /* ---------- CONTROLS ---------- */
+  main{
+    position:relative; z-index:2;
+    max-width:640px; margin:0 auto;
+    padding:8px 24px 80px;
+  }
+
+  .shift-row{
+    display:flex; align-items:center; gap:16px;
+    margin:28px 0 34px;
+  }
+
+  .shift-row label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--brass-bright); white-space:nowrap;
+  }
+
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    flex:1; height:2px; background:var(--line); outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--brass-bright); cursor:pointer;
+    border:2px solid var(--ink);
+    box-shadow:0 0 0 1px var(--brass);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%;
+    background:var(--brass-bright); cursor:pointer; border:2px solid var(--ink);
+  }
+
+  .lang-toggle{
+    display:flex; gap:0; font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.1em;
+  }
+  .lang-toggle button{
+    background:none; border:1px solid var(--line); color:#8a8370;
+    padding:6px 12px; cursor:pointer; transition:all .2s;
+  }
+  .lang-toggle button:first-child{ border-radius:2px 0 0 2px; border-right:none; }
+  .lang-toggle button:last-child{ border-radius:0 2px 2px 0; }
+  .lang-toggle button.active{ background:var(--brass); color:var(--ink); border-color:var(--brass); font-weight:600; }
+
+  .panel{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:3px;
+    padding:28px;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+
+  .field-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--ink-soft); display:block; margin-bottom:8px;
+  }
+
+  textarea{
+    width:100%; resize:vertical; min-height:88px;
+    font-family:'IBM Plex Mono', monospace; font-size:14.5px;
+    background:#f4efe2; border:1px solid rgba(0,0,0,0.12);
+    padding:12px 14px; color:var(--ink); border-radius:2px;
+    line-height:1.5;
+  }
+  textarea:focus{ outline:2px solid var(--rust); outline-offset:1px; }
+
+  .btn-row{ display:flex; gap:10px; margin:18px 0; }
+
+  .key{
+    flex:1; font-family:'Special Elite', monospace;
+    font-size:13px; letter-spacing:0.06em; text-transform:uppercase;
+    padding:13px 10px; cursor:pointer; border:none; border-radius:2px;
+    transition: transform .12s ease, box-shadow .12s ease;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+  }
+  .key:active{ transform: translateY(3px); box-shadow:none; }
+  .key:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+  .key.encrypt{ background:var(--pine); color:#eef2ef; }
+  .key.decrypt{ background:var(--rust); color:#faece7; }
+
+  .output-wrap{ position:relative; margin-top:6px; }
+
+  .copy-btn{
+    position:absolute; top:8px; right:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:10px;
+    background:var(--paper-2); border:1px solid rgba(0,0,0,0.15);
+    padding:4px 9px; border-radius:2px; cursor:pointer; color:var(--ink-soft);
+  }
+  .copy-btn:hover{ background:var(--brass); color:var(--ink); }
+
+  .note{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px;
+    color:#7c7562; margin-top:26px; line-height:1.6;
+    border-top:1px dashed var(--line); padding-top:16px;
+  }
+
+  .note b{ color:var(--brass-bright); }
+
+  @media (prefers-reduced-motion: reduce){
+    #inner-group{ transition:none; }
+    html{ scroll-behavior:auto; }
+  }
+
+  @media (max-width:480px){
+    .shift-row{ flex-wrap:wrap; }
+    .btn-row{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<header>
+  <p class="eyebrow" id="t-eyebrow">UNIT 9 · CIPHER TERMINAL</p>
+  <h1 id="t-title">ENIGMA-9</h1>
+  <p class="lede" id="t-lede">Turn the dial to set your shift key, then encrypt or decrypt. Use the same key both ways — that's the whole trick.</p>
+</header>
+
+<div class="wheel-stage">
+  <svg id="wheel" viewBox="0 0 420 420">
+    <g class="ring-outer">
+      <circle cx="210" cy="210" r="196"/>
+    </g>
+    <g id="outer-letters"></g>
+
+    <g id="inner-group">
+      <circle class="ring-inner-disc-shadow" cx="212" cy="214" r="150"/>
+      <circle class="ring-inner-disc" cx="210" cy="210" r="150"/>
+      <g id="inner-letters"></g>
+    </g>
+
+    <polygon class="pointer" points="210,44 202,60 218,60"/>
+
+    <circle class="hub" cx="210" cy="210" r="46"/>
+    <text class="hub-shift" x="210" y="204" id="hub-shift-text">0</text>
+    <text class="hub-label" x="210" y="224" id="t-hub-label">SHIFT KEY</text>
+  </svg>
+</div>
+
+<main>
+  <div class="shift-row">
+    <label id="t-shift-label" for="shift">Key</label>
+    <input type="range" id="shift" min="0" max="25" value="3" step="1">
+    <div class="lang-toggle">
+      <button id="btn-id" onclick="setLang('id')">ID</button>
+      <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label class="field-label" id="t-input-label">Message</label>
+    <textarea id="input" placeholder="Type or paste your text here..."></textarea>
+
+    <div class="btn-row">
+      <button class="key encrypt" id="btn-encrypt" onclick="run('encrypt')">Encrypt</button>
+      <button class="key decrypt" id="btn-decrypt" onclick="run('decrypt')">Decrypt</button>
+    </div>
+
+    <label class="field-label" id="t-output-label">Result</label>
+    <div class="output-wrap">
+      <textarea id="output" readonly placeholder="Your result appears here"></textarea>
+      <button class="copy-btn" id="t-copy" onclick="copyOutput()">COPY</button>
+    </div>
+  </div>
+
+  <p class="note" id="t-note"><b>Remember:</b> decrypting only works if you dial in the exact same shift key that was used to encrypt. Any other number just produces more noise.</p>
+</main>
+
+<script>
+  const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const cx = 210, cy = 210;
+
+  function placeLetters(containerId, radius, className){
+    const g = document.getElementById(containerId);
+    let html = "";
+    for(let i=0;i<26;i++){
+      const angle = (i/26)*2*Math.PI - Math.PI/2;
+      const x = cx + radius*Math.cos(angle);
+      const y = cy + radius*Math.sin(angle);
+      html += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}">${ALPHA[i]}</text>`;
+    }
+    g.innerHTML = html;
+  }
+  placeLetters("outer-letters", 176, "outer");
+  placeLetters("inner-letters", 150 * 0.78, "inner");
+
+  const shiftInput = document.getElementById('shift');
+  const innerGroup = document.getElementById('inner-group');
+  const hubShiftText = document.getElementById('hub-shift-text');
+
+  function updateWheel(){
+    const s = parseInt(shiftInput.value, 10);
+    hubShiftText.textContent = s;
+    const deg = (s/26)*360;
+    innerGroup.setAttribute('style', `transform: rotate(${deg}deg); transform-origin:${cx}px ${cy}px; transition: transform 0.35s cubic-bezier(.2,.9,.25,1);`);
+  }
+  shiftInput.addEventListener('input', updateWheel);
+  updateWheel();
+
+  function caesar(text, shift){
+    return text.split("").map(ch=>{
+      const code = ch.charCodeAt(0);
+      if(code>=65 && code<=90) return String.fromCharCode((code-65+shift+2600)%26+65);
+      if(code>=97 && code<=122) return String.fromCharCode((code-97+shift+2600)%26+97);
+      return ch;
+    }).join("");
+  }
+
+  function run(mode){
+    const text = document.getElementById('input').value;
+    const shift = parseInt(shiftInput.value,10);
+    const result = mode === 'encrypt' ? caesar(text, shift) : caesar(text, -shift);
+    document.getElementById('output').value = result;
+  }
+
+  function copyOutput(){
+    const out = document.getElementById('output');
+    if(!out.value) return;
+    navigator.clipboard.writeText(out.value);
+    const btn = document.getElementById('t-copy');
+    const old = btn.textContent;
+    btn.textContent = (currentLang === 'id') ? 'TERSALIN' : 'COPIED';
+    setTimeout(()=>btn.textContent = old, 1200);
+  }
+
+  // ---------- i18n ----------
+  const STR = {
+    en:{
+      eyebrow:"UNIT 9 · CIPHER TERMINAL", title:"ENIGMA-9",
+      lede:"Turn the dial to set your shift key, then encrypt or decrypt. Use the same key both ways — that's the whole trick.",
+      hub:"SHIFT KEY", shiftLabel:"Key", inputLabel:"Message", outputLabel:"Result",
+      encrypt:"Encrypt", decrypt:"Decrypt", copy:"COPY",
+      note:"<b>Remember:</b> decrypting only works if you dial in the exact same shift key that was used to encrypt. Any other number just produces more noise.",
+      inputPh:"Type or paste your text here...", outputPh:"Your result appears here"
+    },
+    id:{
+      eyebrow:"UNIT 9 · TERMINAL SANDI", title:"ENIGMA-9",
+      lede:"Putar roda untuk menentukan kunci geser, lalu enkripsi atau dekripsi. Pakai kunci yang sama di kedua arah — itu saja triknya.",
+      hub:"KUNCI GESER", shiftLabel:"Kunci", inputLabel:"Pesan", outputLabel:"Hasil",
+      encrypt:"Enkripsi", decrypt:"Dekripsi", copy:"SALIN",
+      note:"<b>Ingat:</b> dekripsi cuma berhasil kalau kunci gesernya sama persis dengan yang dipakai waktu enkripsi. Angka lain cuma bikin teksnya makin ngaco.",
+      inputPh:"Ketik atau tempel teksmu di sini...", outputPh:"Hasil akan muncul di sini"
+    }
+  };
+
+  let currentLang = 'en';
+  function setLang(lang){
+    currentLang = lang;
+    const s = STR[lang];
+    document.getElementById('t-eyebrow').textContent = s.eyebrow;
+    document.getElementById('t-title').textContent = s.title;
+    document.getElementById('t-lede').textContent = s.lede;
+    document.getElementById('t-hub-label').textContent = s.hub;
+    document.getElementById('t-shift-label').textContent = s.shiftLabel;
+    document.getElementById('t-input-label').textContent = s.inputLabel;
+    document.getElementById('t-output-label').textContent = s.outputLabel;
+    document.getElementById('btn-encrypt').textContent = s.encrypt;
+    document.getElementById('btn-decrypt').textContent = s.decrypt;
+    document.getElementById('t-copy').textContent = s.copy;
+    document.getElementById('t-note').innerHTML = s.note;
+    document.getElementById('input').placeholder = s.inputPh;
+    document.getElementById('output').placeholder = s.outputPh;
+    document.getElementById('btn-id').classList.toggle('active', lang==='id');
+    document.getElementById('btn-en').classList.toggle('active', lang==='en');
+    document.documentElement.lang = lang;
+  }
+</script>
+</body>
+</html>
