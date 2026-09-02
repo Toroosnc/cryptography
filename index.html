@@ -73,7 +73,7 @@
     font-size:17px; line-height:1.6;
   }
 
-  /* ---------- CIPHER WHEEL ---------- */
+  /*The control*/
   .wheel-stage{
     position:relative; z-index:2;
     display:flex; justify-content:center;
@@ -116,7 +116,7 @@
 
   .pointer{ fill:var(--rust); }
 
-  /* ---------- CONTROLS ---------- */
+  /*The control 2*/
   main{
     position:relative; z-index:2;
     max-width:640px; margin:0 auto;
@@ -235,7 +235,7 @@
 <header>
   <p class="eyebrow" id="t-eyebrow">UNIT 9 · CIPHER TERMINAL</p>
   <h1 id="t-title">ENIGMA-9</h1>
-  <p class="lede" id="t-lede">Turn the dial to set your shift key, then encrypt or decrypt. Use the same key both ways — that's the whole trick.</p>
+  <p class="lede" id="t-lede">Turn the dial to set your shift key, then encrypt or decrypt. Use the same key both ways that's the whole trick.</p>
 </header>
 
 <div class="wheel-stage">
@@ -345,7 +345,7 @@
     setTimeout(()=>btn.textContent = old, 1200);
   }
 
-  // ---------- i18n ----------
+  //i18n
   const STR = {
     en:{
       eyebrow:"UNIT 9 · CIPHER TERMINAL", title:"ENIGMA-9",
