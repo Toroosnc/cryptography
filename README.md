@@ -4,7 +4,7 @@ A single-page Caesar cipher tool with a rotating cipher wheel. Bilingual: Englis
 
 ## Run
 
-Just open `index.html` in a browser. No install, no server needed or u can use this "https://toroosnc.github.io/cryptography/".
+Just open `index.html` in a browser. No install, no server needed or u can use this https://toroosnc.github.io/cryptography/.
 
 ## How it works
 
