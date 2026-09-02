@@ -14,7 +14,7 @@ Type your message, hit **Encrypt** or **Decrypt**, result shows up below. Copy b
 
 Example, shift = 3:
 ```
-abc -> def
+La Peace -> Ix Mbxzb
 ```
 
 ## Important
