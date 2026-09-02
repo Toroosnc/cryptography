@@ -29,4 +29,5 @@ Toggle **ID / EN** buttons top right of the controls to switch the whole interfa
 
 - `index.html` everything (HTML, CSS, JS in one file)
 
-- just try okey
+
+just try okey
